@@ -281,7 +281,7 @@ function obtener_usuario($id_usuario)
     return $respuesta;
 }
 
-function actualizar_usuario($id_usuario, $nombre, $email, $contrasenia, $rol, $verificado, $puntos)
+/*function actualizar_usuario($id_usuario, $nombre, $email, $contrasenia, $rol, $verificado, $puntos)
 {
     try {
         $conexion = new PDO("mysql:host=" . SERVIDOR_BD . ";dbname=" . NOMBRE_BD, USUARIO_BD, CLAVE_BD, array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'utf8'"));
@@ -295,6 +295,31 @@ function actualizar_usuario($id_usuario, $nombre, $email, $contrasenia, $rol, $v
                      WHERE id_usuario = ?";
         $sentencia = $conexion->prepare($consulta);
         $sentencia->execute([$nombre, $email, md5($contrasenia), $rol, $verificado, $puntos, $id_usuario]);
+    } catch (PDOException $e) {
+        $sentencia = null;
+        $conexion = null;
+        return ["error" => "Error al actualizar el usuario: " . $e->getMessage()];
+    }
+
+    $sentencia = null;
+    $conexion = null;
+    return ["mensaje" => "Usuario actualizado correctamente"];
+}*/
+
+function actualizar_usuario($id_usuario, $nombre, $email, $contrasenia)
+{
+    try {
+        $conexion = new PDO("mysql:host=" . SERVIDOR_BD . ";dbname=" . NOMBRE_BD, USUARIO_BD, CLAVE_BD, array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'utf8'"));
+    } catch (PDOException $e) {
+        return ["error" => "Imposible conectar: " . $e->getMessage()];
+    }
+
+    try {
+        $consulta = "UPDATE usuarios 
+                     SET nombre = ?, email = ?, contrasenya = ? 
+                     WHERE id_usuario = ?";
+        $sentencia = $conexion->prepare($consulta);
+        $sentencia->execute([$nombre, $email, md5($contrasenia), $id_usuario]);
     } catch (PDOException $e) {
         $sentencia = null;
         $conexion = null;
@@ -334,7 +359,7 @@ function obtener_posts()
     }
 
     try {
-        $consulta = "SELECT * FROM posts";
+        $consulta = "SELECT posts.*, usuarios.nombre FROM posts join usuarios on usuarios.id_usuario = posts.autor_id;";
         $sentencia = $conexion->prepare($consulta);
         $sentencia->execute();
         $posts = $sentencia->fetchAll(PDO::FETCH_ASSOC);
@@ -355,7 +380,7 @@ function obtener_post($id_post)
     }
 
     try {
-        $consulta = "SELECT titulo, comentario, fecha, autor_id FROM posts WHERE id_post=?";
+        $consulta = "SELECT posts.*, usuarios.nombre FROM posts join usuarios on usuarios.id_usuario = posts.autor_id WHERE id_post=?";
         $sentencia = $conexion->prepare($consulta);
         $sentencia->execute([$id_post]);
     } catch (PDOException $e) {
@@ -376,7 +401,7 @@ function obtener_post($id_post)
     return $respuesta;
 }
 
-function crear_post($titulo, $comentario, $autor_id)
+function crear_post($titulo, $descripcion, $comentario, $imagen_url, $autor_id)
 {
     try {
         $conexion = new PDO("mysql:host=" . SERVIDOR_BD . ";dbname=" . NOMBRE_BD, USUARIO_BD, CLAVE_BD, array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'utf8'"));
@@ -385,10 +410,10 @@ function crear_post($titulo, $comentario, $autor_id)
     }
 
     try {
-        $consulta = "INSERT INTO posts (titulo, comentario, fecha, autor_id) 
-                     VALUES (?, ?, NOW(), ?)";
+        $consulta = "INSERT INTO posts (titulo, descripcion, comentario, fecha, img_publicacion, autor_id) 
+                     VALUES (?, ?, ?, NOW(), ?, ?)";
         $sentencia = $conexion->prepare($consulta);
-        $sentencia->execute([$titulo, $comentario, $autor_id]);
+        $sentencia->execute([$titulo, $descripcion, $comentario, $imagen_url, $autor_id]);
     } catch (PDOException $e) {
         $sentencia = null;
         $conexion = null;
@@ -477,7 +502,9 @@ function obtener_comentario_de_post($id_post)
     }
 
     try {
-        $consulta = "SELECT * FROM comentarios WHERE post_id = ?";
+        $consulta = "SELECT comentarios.*, usuarios.nombre FROM comentarios
+        JOIN usuarios on comentarios.autor_id = usuarios.id_usuario
+        WHERE post_id = ?";
         $sentencia = $conexion->prepare($consulta);
         $sentencia->execute([$id_post]);
 
@@ -534,7 +561,7 @@ function eliminar_comentario($id_comentario)
     }
 }
 
-function aniadir_al_carrito($usuario_id, $producto_id, $cantidad)
+function aniadir_al_carrito($usuario_id, $producto_id)
 {
     try {
         $conexion = new PDO("mysql:host=" . SERVIDOR_BD . ";dbname=" . NOMBRE_BD, USUARIO_BD, CLAVE_BD, array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'utf8'"));
@@ -544,9 +571,11 @@ function aniadir_al_carrito($usuario_id, $producto_id, $cantidad)
 
     try {
         $consulta = "INSERT INTO carrito (usuario_id, producto_id, cantidad, fecha_anyadido) 
-                     VALUES (?, ?, ?, NOW())";
+                     VALUES (?, ?, 1, NOW())
+                     ON DUPLICATE KEY UPDATE
+                    cantidad = cantidad + VALUES(cantidad);";
         $sentencia = $conexion->prepare($consulta);
-        $sentencia->execute([$usuario_id, $producto_id, $cantidad]);
+        $sentencia->execute([$usuario_id, $producto_id]);
     } catch (PDOException $e) {
         $sentencia = null;
         $conexion = null;
@@ -567,7 +596,10 @@ function obtener_productos_carrito($usuario_id)
     }
 
     try {
-        $consulta = "SELECT * FROM carrito WHERE usuario_id = ?";
+        $consulta = "SELECT carrito.*, productos.nombre, productos.precio, productos.imagen_url
+        FROM carrito 
+        JOIN productos on carrito.producto_id = productos.id_producto
+        WHERE carrito.usuario_id = ?";
         $sentencia = $conexion->prepare($consulta);
         $sentencia->execute([$usuario_id]);
 
@@ -597,6 +629,63 @@ function eliminar_producto_carrito($id_producto)
         return ["mensaje" => "Producto con ID $id_producto borrado con exito del carrito"];
     } catch (PDOException $e) {
         return ["error" => "Imposible realizar la consulta: " . $e->getMessage()];
+    }
+}
+
+function incrementar_cantidad_carrito($usuario_id, $producto_id)
+{
+    try {
+        $conexion = new PDO("mysql:host=" . SERVIDOR_BD . ";dbname=" . NOMBRE_BD, USUARIO_BD, CLAVE_BD, array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'utf8'"));
+    } catch (PDOException $e) {
+        return ["error" => "Imposible conectar: " . $e->getMessage()];
+    }
+
+    try {
+        $consulta = "UPDATE carrito SET cantidad = cantidad + 1 WHERE usuario_id = ? AND producto_id = ?";
+        $sentencia = $conexion->prepare($consulta);
+        $sentencia->execute([$usuario_id, $producto_id]);
+
+        return ["mensaje" => "Cantidad incrementada correctamente"];
+    } catch (PDOException $e) {
+        return ["error" => "Error al incrementar la cantidad: " . $e->getMessage()];
+    }
+}
+
+function decrementar_cantidad_carrito($usuario_id, $producto_id)
+{
+    try {
+        $conexion = new PDO("mysql:host=" . SERVIDOR_BD . ";dbname=" . NOMBRE_BD, USUARIO_BD, CLAVE_BD, array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'utf8'"));
+    } catch (PDOException $e) {
+        return ["error" => "Imposible conectar: " . $e->getMessage()];
+    }
+
+    try {
+        // Primero verificamos la cantidad actual
+        $consulta_check = "SELECT cantidad FROM carrito WHERE usuario_id = ? AND producto_id = ?";
+        $sentencia_check = $conexion->prepare($consulta_check);
+        $sentencia_check->execute([$usuario_id, $producto_id]);
+        
+        if ($sentencia_check->rowCount() > 0) {
+            $resultado = $sentencia_check->fetch(PDO::FETCH_ASSOC);
+            
+            if ($resultado['cantidad'] <= 1) {
+                // Si la cantidad es 1 o menor, eliminamos el producto del carrito
+                $consulta = "DELETE FROM carrito WHERE usuario_id = ? AND producto_id = ?";
+                $sentencia = $conexion->prepare($consulta);
+                $sentencia->execute([$usuario_id, $producto_id]);
+                return ["mensaje" => "Producto eliminado del carrito"];
+            } else {
+                // Si la cantidad es mayor a 1, decrementamos
+                $consulta = "UPDATE carrito SET cantidad = cantidad - 1 WHERE usuario_id = ? AND producto_id = ?";
+                $sentencia = $conexion->prepare($consulta);
+                $sentencia->execute([$usuario_id, $producto_id]);
+                return ["mensaje" => "Cantidad decrementada correctamente"];
+            }
+        } else {
+            return ["error" => "Producto no encontrado en el carrito"];
+        }
+    } catch (PDOException $e) {
+        return ["error" => "Error al decrementar la cantidad: " . $e->getMessage()];
     }
 }
 
@@ -654,6 +743,27 @@ function actualizar_puntos_usuario($id_usuario, $puntos)
     $sentencia = null;
     $conexion = null;
     return ["mensaje" => "Puntos del suario actualizado correctamente"];
+}
+
+function procesar_carrito($id_usuario){
+    try {
+        $conexion = new PDO("mysql:host=" . SERVIDOR_BD . ";dbname=" . NOMBRE_BD, USUARIO_BD, CLAVE_BD, array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'utf8'"));
+    } catch (PDOException $e) {
+        return ["error" => "Imposible conectar: " . $e->getMessage()];
+    }
+    
+    try {
+        $consulta = "UPDATE carrito SET estado = 'procesado' WHERE usuario_id = ?";
+        $sentencia = $conexion->prepare($consulta);
+        $sentencia->execute([$id_usuario]);
+    } catch (PDOException $e) {
+        $sentencia = null;
+        $conexion = null;
+        return ["error" => "Error al procesar el carrito: " . $e->getMessage()];
+    }
+    $sentencia = null;
+    $conexion = null;
+    return ["mensaje" => "Carrito procesado correctamente"];
 }
 
 

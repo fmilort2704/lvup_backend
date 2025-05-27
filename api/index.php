@@ -1,12 +1,23 @@
 <?php
 
+// CORS headers SIEMPRE antes de cualquier salida
+header("Content-Type: application/json");
 header("Access-Control-Allow-Origin: http://localhost:3000");
-header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type");
+header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Access-Control-Allow-Credentials: true");
+
+// Manejar preflight OPTIONS y terminar la petición
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
 
 require "src/funciones_servicios.php";
 require __DIR__ . '/Slim/autoload.php';
+require 'PHPMailer/src/PHPMailer.php';
+require 'PHPMailer/src/SMTP.php';
+require 'PHPMailer/src/Exception.php';
 
 $app = new \Slim\App;
 
@@ -34,6 +45,19 @@ $app->post('/crear_producto', function ($request) {
     echo json_encode(crear_producto($productos["nombre"], $productos["descripcion"], $productos["estado"], $productos["precio"], $productos["stock"], $productos["imagen_url"], $productos["categoria_id"], $productos["vendedor_id"]));
 });
 
+$app->post('/crear_producto_segunda_mano', function ($request) {
+    $nombre = $request->getParam("nombre");
+    $descripcion = $request->getParam("descripcion");
+    $precio = $request->getParam("precio");
+    $imagen_url = $request->getParam("imagen_url");
+    $verificado = $request->getParam("verificado");
+    $categoria_id = $request->getParam("categoria_id");
+    $vendedor_id = $request->getParam("vendedor_id");
+    $descripcion_larga = $request->getParam("descripcion_larga");
+    
+    echo json_encode(crear_producto_segunda_mano($nombre, $descripcion, $precio, $imagen_url, $verificado, $categoria_id, $vendedor_id, $descripcion_larga));
+});
+
 $app->delete('/borrar_producto/{id_producto}', function ($request) {
     $id_producto = $request->getAttribute("id_producto");
     echo json_encode(borrar_producto($id_producto));
@@ -50,22 +74,18 @@ $app->get('/obtener_productos_usuarios/{id_usuario}', function ($request) {
 });
 
 $app->post('/registrarse', function ($request) {
-    $usuario = [
-        "nombre" => "Ejemplo",
-        "email" => "ejemplo@gmail.com",
-        "contrasenya" => "123456",
-];
-    echo json_encode(registrar_usuario($usuario["nombre"], $usuario["email"], $usuario["contrasenya"]));
+    $nombre = $request->getParam("nombre");
+    $email = $request->getParam("email");
+    $contrasenya = $request->getParam("contrasenya");
+    echo json_encode(registrar_usuario($nombre, $email, $contrasenya));
 });
 
 $app->post('/login', function ($request) {
     //$usuario = $request->getParam("usuario");
     //$clave = $request->getParam("clave");
-    $usuario = [
-        "email" => "ejemplo@gmail.com",
-        "contrasenya" => "123456",
-];
-    echo json_encode(login($usuario["email"], $usuario["contrasenya"]));
+    $email = $request->getParam("email");
+    $contrasenya = $request->getParam("contrasenya");
+    echo json_encode(login($email, $contrasenya));
 });
 
 $app->get('/usuario/{id_usuario}', function ($request) {
@@ -75,16 +95,14 @@ $app->get('/usuario/{id_usuario}', function ($request) {
 
 $app->put('/actualizar_usuario/{id_usuario}', function ($request) {
     $id_usuario = $request->getAttribute("id_usuario");
-    $usuario = [
-        "nombre" => "Ejemplo",
-        "email" => "ejemplo@gmail.com",
-        "contrasenya" => "123456",
-        "rol" => "user",
-        "puntos" => 100,
-        "verificado" => 1,
-];
-    
-    echo json_encode(actualizar_usuario($id_usuario, $usuario["nombre"], $usuario["email"], $usuario["contrasenya"], $usuario["rol"], $usuario["puntos"], $usuario["verificado"]));
+
+    $input = json_decode($request->getBody(), true);
+
+    $nombre = isset($input["nombre"]) ? $input["nombre"] : null;
+    $email = isset($input["email"]) ? $input["email"] : null;
+    $contrasenya = isset($input["contrasenya"]) ? $input["contrasenya"] : null;
+
+    echo json_encode(actualizar_usuario($id_usuario, $nombre, $email, $contrasenya));
 });
 
 
@@ -103,12 +121,13 @@ $app->get('/obtener_post/{id_post}', function ($request) {
 });
 
 $app->post('/crear_post', function ($request) {
-    $post = [
-        "titulo" => "Ejemplo",
-        "comentario" => "texto de ejemplo",
-        "autor_id" => 1,
-];
-    echo json_encode(crear_post($post["titulo"], $post["comentario"], $post["autor_id"]));
+    $titulo = $request->getParam("titulo");
+    $descripcion = $request->getParam("descripcion");
+    $comentario = $request->getParam("comentario");
+    $imagen_url = $request->getParam("imagen_url");
+    $autor_id = $request->getParam("autor_id");
+
+    echo json_encode(crear_post($titulo, $descripcion, $comentario, $imagen_url, $autor_id));
 });
 
 $app->put('/actualizar_post/{id_post}', function ($request) {
@@ -137,12 +156,11 @@ $app->get('/obtener_comentario_de_post/{id_post}', function ($request) {
 });
 
 $app->post('/crear_comentario', function ($request) {
-    $comentario = [
-        "contenido" => "Ejemplode comentario",
-        "post_id" => 3,
-        "autor_id" => 6,
-];
-    echo json_encode(crear_comentario($comentario["contenido"], $comentario["post_id"], $comentario["autor_id"]));
+    $contenido = $request->getParam("contenido");
+    $post_id = $request->getParam("post_id");
+    $autor_id = $request->getParam("autor_id");
+
+    echo json_encode(crear_comentario($contenido, $post_id, $autor_id));
 });
 
 $app->delete('/eliminar_comentario/{id_comentario}', function ($request) {
@@ -151,12 +169,9 @@ $app->delete('/eliminar_comentario/{id_comentario}', function ($request) {
 });
 
 $app->post('/introducir_carrito', function ($request) {
-    $carrito = [
-        "usuario_id" => 1,
-        "producto_id" => 4,
-        "cantidad" => 2,
-];
-    echo json_encode(aniadir_al_carrito($carrito["usuario_id"], $carrito["producto_id"], $carrito["cantidad"]));
+    $usuario_id = $request->getParam("usuario_id");
+    $producto_id = $request->getParam("producto_id");
+    echo json_encode(aniadir_al_carrito($usuario_id, $producto_id));
 });
 
 $app->get('/obtener_productos_carrito/{id_usuario}', function ($request) {
@@ -167,6 +182,18 @@ $app->get('/obtener_productos_carrito/{id_usuario}', function ($request) {
 $app->delete('/eliminar_producto_carrito/{id_producto}', function ($request) {
     $id_producto = $request->getAttribute("id_producto");
     echo json_encode(eliminar_producto_carrito($id_producto));
+});
+
+$app->put('/incrementar_carrito', function ($request) {
+    $usuario_id = $request->getParam("usuario_id");
+    $producto_id = $request->getParam("producto_id");
+    echo json_encode(incrementar_cantidad_carrito($usuario_id, $producto_id));
+});
+
+$app->put('/decrementar_carrito', function ($request) {
+    $usuario_id = $request->getParam("usuario_id");
+    $producto_id = $request->getParam("producto_id");
+    echo json_encode(decrementar_cantidad_carrito($usuario_id, $producto_id));
 });
 
 $app->get('/ver_puntos_usuario/{id_usuario}', function ($request) {
@@ -193,8 +220,72 @@ $app->get('/logueado', function () {
     }
 });
 
+
 $app->get('/cerrarSesion', function () {
     echo json_encode(cerrar_sesion());
+});
+/*
+$app->post('/enviar_recibo', function($request){
+    require_once __DIR__ . '/PHPMailer/src/PHPMailer.php';
+    require_once __DIR__ . '/PHPMailer/src/SMTP.php';
+    require_once __DIR__ . '/PHPMailer/src/Exception.php';
+    
+    $data = json_decode(file_get_contents('php://input'), true);
+    $nombre = $data['nombre'] ?? '';
+    $apellido = $data['apellido'] ?? '';
+    $email = $data['email'] ?? '';
+    $direccion = $data['direccion'] ?? '';
+    $codigoPostal = $data['codigoPostal'] ?? '';
+    $provincia = $data['provincia'] ?? '';
+    $telefono = $data['telefono'] ?? '';
+    $dni = $data['dni'] ?? '';
+    $metodoPago = $data['metodoPago'] ?? '';
+    $numeroTarjeta = $data['numeroTarjeta'] ?? '';
+    $importe = '99,99€';
+
+    $asunto = "Recibo de tu compra LvUp";
+    $mensaje = "Hola $nombre $apellido,\n\nGracias por tu compra. Este es tu recibo:\n\n"
+        . "Importe: $importe\n"
+        . "Método de pago: $metodoPago\n"
+        . ($numeroTarjeta ? "Número de tarjeta: $numeroTarjeta\n" : "")
+        . "Dirección: $direccion\n"
+        . "Código Postal: $codigoPostal\n"
+        . "Provincia: $provincia\n"
+        . "Teléfono: $telefono\n"
+        . "DNI: $dni\n\n"
+        . "¡Gracias por confiar en LvUp!";
+
+    use PHPMailer\PHPMailer\PHPMailer;
+    use PHPMailer\PHPMailer\Exception;
+
+    $mail = new PHPMailer(true);
+    try {
+        $mail->isSMTP();
+        $mail->Host = 'smtp.gmail.com'; // Cambia esto si usas otro proveedor
+        $mail->SMTPAuth = true;
+        $mail->Username = 'tucorreo@gmail.com'; // Tu correo
+        $mail->Password = 'tu_contraseña';      // Tu contraseña o app password
+        $mail->SMTPSecure = 'tls';
+        $mail->Port = 587;
+
+        // Configuración del correo
+        $mail->setFrom('noreplyLvUp@gmail.com', 'LvUp');
+        $mail->addAddress($email, "$nombre $apellido");
+        $mail->Subject = $asunto;
+        $mail->Body = $mensaje;
+
+        $mail->send();
+        echo json_encode(['success' => true]);
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'error' => $mail->ErrorInfo]);
+    }
+});*/
+
+
+$app->put('/procesar_carrito/{id_usuario}', function ($request, $response) {
+    $id_usuario = $request->getAttribute("id_usuario");
+
+    echo json_encode(procesar_carrito($id_usuario));
 });
 
 $app->run();
