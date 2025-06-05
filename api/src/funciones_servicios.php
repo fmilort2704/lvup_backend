@@ -791,7 +791,7 @@ function obtener_productos_carrito($usuario_id)
         if ($sentencia->rowCount() > 0) {
             return ["carrito" => $sentencia->fetchALL(PDO::FETCH_ASSOC)];
         } else {
-            return ["mensaje" => "No se han encontrado productos en el carrito del usuario con id ".$id_post];
+            return ["mensaje" => "No se han encontrado productos en el carrito del usuario con id ".$usuario_id];
         }
     } catch (PDOException $e) {
         return ["error" => "Imposible realizar la consulta: " . $e->getMessage()];
