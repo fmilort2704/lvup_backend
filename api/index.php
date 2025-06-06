@@ -317,11 +317,6 @@ $app->post('/crear_valoracion', function ($request) {
     echo json_encode(crear_valoracion($puntuacion, $comentario, $valorador_id, $valorado_id));
 });
 
-
-$app->get('/cerrarSesion', function () {
-    echo json_encode(cerrar_sesion());
-});
-
 $app->put('/procesar_carrito/{id_usuario}', function ($request, $response) {
     require_jwt();
     $id_usuario = $request->getAttribute("id_usuario");

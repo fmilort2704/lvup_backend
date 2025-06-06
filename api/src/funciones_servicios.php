@@ -1065,12 +1065,4 @@ function producir_venta_detalle($id_venta, $producto_id, $cantidad, $vendedor_id
     $conexion = null;
     return ["mensaje" => "Detalles de la venta introducidos correctamente"];
 }
-
-
-function cerrar_sesion()
-{
-    session_destroy();
-    return ["success" => true, "message" => "Sesión cerrada"];
-}
-
 ?>
