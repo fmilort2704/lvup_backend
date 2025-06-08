@@ -1,16 +1,27 @@
 <?php
+// Lista de orígenes permitidos
+$allowed_origins = [
+    'http://localhost:3000',       // Desarrollo local
+    'http://lvup.kesug.com'        // Producción
+];
 
-// CORS headers SIEMPRE antes de cualquier salida
+// Detectar el origen de la petición
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+
+// Si el origen está permitido, añadirlo a los headers
+if (in_array($origin, $allowed_origins)) {
+    header("Access-Control-Allow-Origin: $origin");
+    header("Access-Control-Allow-Credentials: true");
+}
+
 header("Content-Type: application/json");
-header("Access-Control-Allow-Origin: http://localhost:3000");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
-header("Access-Control-Allow-Credentials: true");
 
-// Manejar preflight OPTIONS y terminar la petición
-if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+// Responder a preflight (OPTIONS)
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
-    exit();
+    exit;
 }
 
 require "src/funciones_servicios.php";
@@ -18,7 +29,7 @@ require __DIR__ . '/Slim/autoload.php';
 require 'PHPMailer/src/PHPMailer.php';
 require 'PHPMailer/src/SMTP.php';
 require 'PHPMailer/src/Exception.php';
-require "src/jwt_utils.php"; // JWT utils
+require "src/jwt_utils.php";
 
 $app = new \Slim\App;
 

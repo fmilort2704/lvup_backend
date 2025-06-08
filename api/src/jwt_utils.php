@@ -2,7 +2,6 @@
 use \Firebase\JWT\JWT;
 use \Firebase\JWT\Key;
 
-// Cambia esto por una clave secreta segura y mantenla privada
 const JWT_SECRET = 'b7e3f8c2a4d1e6f9c0b2a8e7d3c4f1b6e9a2c3d4b5f6e7a8c9d0b1e2f3a4c5d6';
 
 // Genera un token JWT para un usuario
