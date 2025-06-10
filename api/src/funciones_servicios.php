@@ -6,15 +6,22 @@ use Firebase\JWT\Key;
 require 'Firebase/autoload.php';
 
 
-define("SERVIDOR_BD","localhost");
+/*define("SERVIDOR_BD","localhost");
 define("USUARIO_BD","root");
 define("CLAVE_BD","");
-define("NOMBRE_BD","bd_lvup");
+define("NOMBRE_BD","bd_lvup");*/
 
+<<<<<<< HEAD
 /*define("SERVIDOR_BD","mysql.railway.internal");
 define("USUARIO_BD","root");
 define("CLAVE_BD","ltctpCBsulnNCtzRasuZeJCIdthmOoHQ");
 define("NOMBRE_BD","railway");*/
+=======
+define("SERVIDOR_BD","sql113.infinityfree.com");
+define("USUARIO_BD","if0_39174413");
+define("CLAVE_BD","BCMRNQBc1");
+define("NOMBRE_BD","if0_39174413_db_lvup");
+>>>>>>> 29cbf0aa720925517b97fb924c0e691c41f21e6a
 
 function login($usuario, $contrasenya)
 {
