@@ -29,7 +29,7 @@ require __DIR__ . '/Slim/autoload.php';
 require 'PHPMailer/src/PHPMailer.php';
 require 'PHPMailer/src/SMTP.php';
 require 'PHPMailer/src/Exception.php';
-require "src/jwt_utils.php";
+//require "src/jwt_utils.php";
 
 $app = new \Slim\App;
 
@@ -44,7 +44,7 @@ $app->get('/obtener_producto/{id_producto}', function ($request) {
 });
 
 $app->post('/crear_producto', function ($request) {
-    require_jwt();
+    //require_jwt();
     $nombre = $request->getParam("nombre");
     $descripcion = $request->getParam("descripcion");
     $precio = $request->getParam("precio");
@@ -60,7 +60,7 @@ $app->post('/crear_producto', function ($request) {
 });
 
 $app->post('/crear_producto_segunda_mano', function ($request) {
-    require_jwt();
+    //require_jwt();
     $nombre = $request->getParam("nombre");
     $descripcion = $request->getParam("descripcion");
     $precio = $request->getParam("precio");
@@ -73,22 +73,19 @@ $app->post('/crear_producto_segunda_mano', function ($request) {
     echo json_encode(crear_producto_segunda_mano($nombre, $descripcion, $precio, $imagen_url, $verificado, $categoria_id, $vendedor_id, $descripcion_larga));
 });
 
-$app->delete('/borrar_producto/{id_producto}', function ($request) {
-    require_jwt();
-    $id_producto = $request->getAttribute("id_producto");
+$app->post('/borrar_producto', function ($request) {
+    $id_producto = $request->getParam("id_producto");
     echo json_encode(borrar_producto($id_producto));
 });
 
-$app->put('/actualizar_producto/{id_producto}', function ($request) {
-    require_jwt();
-    $id_producto = $request->getAttribute("id_producto");
+$app->post('/actualizar_producto', function ($request) {
+    $id_producto = $request->getParam("id_producto");
     $nombre = $request->getParam("nombre");
     $descripcion = $request->getParam("descripcion");
     $descripcion_larga = $request->getParam("descripcion_larga");
     $precio = $request->getParam("precio");
     $imagen_url = $request->getParam("imagen_url");
     $categoria_id = $request->getParam("categoria_id");
-    
     echo json_encode(actualizar_producto($id_producto, $nombre, $descripcion, $descripcion_larga, $precio, $imagen_url, $categoria_id));
 });
 
@@ -98,7 +95,7 @@ $app->get('/obtener_productos_categoria/{id_categoria}', function ($request) {
 });
 
 $app->get('/obtener_productos_usuarios/{id_usuario}', function ($request) {
-    require_jwt();
+    //require_jwt();
     $id_usuario = $request->getAttribute("id_usuario");
     echo json_encode(obtener_productos_por_usuario($id_usuario));
 });
@@ -116,8 +113,8 @@ $app->post('/login', function ($request) {
     $contrasenya = $input['contrasenya'] ?? null;
     $user = login($email, $contrasenya);
     if ($user && isset($user['usuario']['id_usuario'])) {
-        $token = generar_jwt($user['usuario']);
-        $user['token'] = $token;
+        //$token = generar_jwt($user['usuario']);
+        //$user['token'] = $token;
         echo json_encode($user);
     } else {
         echo json_encode([
@@ -128,34 +125,29 @@ $app->post('/login', function ($request) {
 });
 
 $app->get('/usuarios', function ($request) {
-    require_jwt();
+    //require_jwt();
     echo json_encode(obtener_usuarios());
 });
 
 
-$app->get('/usuario/{id_usuario}', function ($request) {
-    require_jwt();
+$app->get('/obtener_usuario/{id_usuario}', function ($request) {
+    //require_jwt();
     $id_usuario = $request->getAttribute("id_usuario");
     echo json_encode(obtener_usuario($id_usuario));
 });
 
-$app->put('/actualizar_usuario/{id_usuario}', function ($request) {
-    require_jwt();
-    $id_usuario = $request->getAttribute("id_usuario");
-
-    $input = json_decode($request->getBody(), true);
-
-    $nombre = isset($input["nombre"]) ? $input["nombre"] : null;
-    $email = isset($input["email"]) ? $input["email"] : null;
-    $contrasenya = isset($input["contrasenya"]) ? $input["contrasenya"] : null;
-
+$app->post('/actualizar_usuario', function ($request) {
+    //require_jwt();
+    $id_usuario = $request->getParam("id_usuario");
+    $nombre = $request->getParam("nombre");
+    $email = $request->getParam("email");
+    $contrasenya = $request->getParam("contrasenya");
     echo json_encode(actualizar_usuario($id_usuario, $nombre, $email, $contrasenya));
 });
 
 
-$app->delete('/eliminar_usuario/{id_usuario}', function ($request) {
-    require_jwt();
-    $id_usuario = $request->getAttribute("id_usuario");
+$app->post('/eliminar_usuario', function ($request) {
+    $id_usuario = $request->getParam("id_usuario");
     echo json_encode(eliminar_usuario($id_usuario));
 });
 
@@ -169,7 +161,7 @@ $app->get('/obtener_post/{id_post}', function ($request) {
 });
 
 $app->post('/crear_post', function ($request) {
-    require_jwt();
+    //require_jwt();
     $titulo = $request->getParam("titulo");
     $descripcion = $request->getParam("descripcion");
     $comentario = $request->getParam("comentario");
@@ -179,40 +171,37 @@ $app->post('/crear_post', function ($request) {
     echo json_encode(crear_post($titulo, $descripcion, $comentario, $imagen_url, $autor_id));
 });
 
-$app->put('/actualizar_post/{id_post}', function ($request) {
-    require_jwt();
-    $id_post = $request->getAttribute("id_post");
+$app->post('/actualizar_post', function ($request) {
+    //require_jwt();
+    $id_post = $request->getParam("id_post");
     $titulo = $request->getParam("titulo");
     $descripcion = $request->getParam("descripcion");
     $comentario = $request->getParam("comentario");
     $img_publicacion = $request->getParam("img_publicacion");
-
     echo json_encode(actualizar_post($id_post, $titulo, $descripcion, $comentario, $img_publicacion));
 });
 
-$app->put('/editar_valoracion_publicacion/{id_post}', function ($request) {
-    require_jwt();
-    $id_post = $request->getAttribute("id_post");
+$app->post('/editar_valoracion_publicacion', function ($request) {
+    //require_jwt();
+    $id_post = $request->getParam("id_post");
     $puntuacion = $request->getParam("puntuacion");
     $numVal = $request->getParam("numVal");
-
     echo json_encode(editar_valoracion_publicacion($id_post, $puntuacion, $numVal));
 });
 
-$app->delete('/eliminar_post/{id_post}', function ($request) {
-    require_jwt();
-    $id_post = $request->getAttribute("id_post");
+$app->post('/eliminar_post', function ($request) {
+    $id_post = $request->getParam("id_post");
     echo json_encode(eliminar_post($id_post));
 });
 
 $app->get('/obtener_post_por_usuario/{id_usuario}', function ($request) {
-    require_jwt();
+    //require_jwt();
     $id_usuario = $request->getAttribute("id_usuario");
     echo json_encode(obtener_post_por_usuario($id_usuario));
 });
 
 $app->get('/comentarios', function ($request){
-    require_jwt();
+    //require_jwt();
     echo json_encode(obtener_comentarios());
 });
 
@@ -222,14 +211,14 @@ $app->get('/obtener_comentario_de_post/{id_post}', function ($request) {
 });
 
 $app->get('/obtener_comentarios_usuario/{id_usuario}', function ($request) {
-    require_jwt();
+    //require_jwt();
     $id_usuario = $request->getAttribute("id_usuario");
     echo json_encode(obtener_comentario_usuario($id_usuario));
 });
 
 
 $app->post('/crear_comentario', function ($request) {
-    require_jwt();
+    //require_jwt();
     $contenido = $request->getParam("contenido");
     $post_id = $request->getParam("post_id");
     $autor_id = $request->getParam("autor_id");
@@ -237,52 +226,50 @@ $app->post('/crear_comentario', function ($request) {
     echo json_encode(crear_comentario($contenido, $post_id, $autor_id));
 });
 
-$app->delete('/eliminar_comentario/{id_comentario}', function ($request) {
-    require_jwt();
-    $id_comentario = $request->getAttribute("id_comentario");
+$app->post('/eliminar_comentario', function ($request) {
+    $id_comentario = $request->getParam("id_comentario");
     echo json_encode(eliminar_comentario($id_comentario));
 });
 
 $app->post('/introducir_carrito', function ($request) {
-    require_jwt();
+    //require_jwt();
     $usuario_id = $request->getParam("usuario_id");
     $producto_id = $request->getParam("producto_id");
     echo json_encode(aniadir_al_carrito($usuario_id, $producto_id));
 });
 
 $app->get('/obtener_productos_carrito/{id_usuario}', function ($request) {
-    require_jwt();
+    //require_jwt();
     $id_usuario = $request->getAttribute("id_usuario");
     echo json_encode(obtener_productos_carrito($id_usuario));
 });
 
-$app->delete('/eliminar_producto_carrito/{id_producto}', function ($request) {
-    require_jwt();
-    $id_producto = $request->getAttribute("id_producto");
+$app->post('/eliminar_producto_carrito', function ($request) {
+    $id_producto = $request->getParam("id_producto");
     echo json_encode(eliminar_producto_carrito($id_producto));
 });
 
-$app->put('/incrementar_carrito', function ($request) {
-    require_jwt();
+$app->post('/incrementar_carrito', function ($request) {
+    //require_jwt();
     $usuario_id = $request->getParam("usuario_id");
     $producto_id = $request->getParam("producto_id");
     echo json_encode(incrementar_cantidad_carrito($usuario_id, $producto_id));
 });
 
-$app->put('/decrementar_carrito', function ($request) {
-    require_jwt();
+$app->post('/decrementar_carrito', function ($request) {
+    //require_jwt();
     $usuario_id = $request->getParam("usuario_id");
     $producto_id = $request->getParam("producto_id");
     echo json_encode(decrementar_cantidad_carrito($usuario_id, $producto_id));
 });
 
 $app->get('/ultima_venta', function ($request){
-    require_jwt();
+    //require_jwt();
     echo json_encode(ultima_venta());
 });
 
 $app->post('/producir_venta', function ($request) {
-    require_jwt();
+    //require_jwt();
     $id_venta = $request->getParam("id_venta");
     $total = $request->getParam("total");
     $comprador_id = $request->getParam("comprador_id");
@@ -290,7 +277,7 @@ $app->post('/producir_venta', function ($request) {
 });
 
 $app->post('/producir_venta_detalle', function ($request) {
-    require_jwt();
+    //require_jwt();
     $id_venta = $request->getParam("id_venta");
     $producto_id = $request->getParam("producto_id");
     $cantidad = $request->getParam("cantidad");
@@ -299,27 +286,25 @@ $app->post('/producir_venta_detalle', function ($request) {
 });
 
 $app->get('/ver_puntos_usuario/{id_usuario}', function ($request) {
-    require_jwt();
+    //require_jwt();
     $id_usuario = $request->getAttribute("id_usuario");
     echo json_encode(ver_puntos_usuario($id_usuario));
 });
 
-$app->put('/actualizar_puntos_usuario/{id_usuario}', function ($request) {
-    require_jwt();
-    $id_usuario = $request->getAttribute("id_usuario");
+$app->post('/actualizar_puntos_usuario', function ($request) {
+    $id_usuario = $request->getParam("id_usuario");
     $puntos = $request->getParam("puntos");
-    
     echo json_encode(actualizar_puntos_usuario($id_usuario, $puntos));
 });
 
 $app->get('/obtener_valoraciones_usuario/{id_usuario}', function ($request) {
-    require_jwt();
+    //require_jwt();
     $id_usuario = $request->getAttribute("id_usuario");
     echo json_encode(obtener_valoraciones_usuario($id_usuario));
 });
 
 $app->post('/crear_valoracion', function ($request) {
-    require_jwt();
+    //require_jwt();
     $puntuacion = $request->getParam("puntuacion");
     $comentario = $request->getParam("comentario");
     $valorador_id = $request->getParam("valorador_id");
@@ -328,15 +313,13 @@ $app->post('/crear_valoracion', function ($request) {
     echo json_encode(crear_valoracion($puntuacion, $comentario, $valorador_id, $valorado_id));
 });
 
-$app->put('/procesar_carrito/{id_usuario}', function ($request, $response) {
-    require_jwt();
-    $id_usuario = $request->getAttribute("id_usuario");
-
+$app->post('/procesar_carrito', function ($request) {
+    $id_usuario = $request->getParam("id_usuario");
     echo json_encode(procesar_carrito($id_usuario));
 });
 
 $app->get('/obtener_stock/{id_producto}', function($request, $response) {
-    require_jwt();
+    //require_jwt();
     $id_producto = $request->getAttribute("id_producto");
 
     echo json_encode(obtener_stock($id_producto));

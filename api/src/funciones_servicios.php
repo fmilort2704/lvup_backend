@@ -11,10 +11,10 @@ define("USUARIO_BD","root");
 define("CLAVE_BD","");
 define("NOMBRE_BD","bd_lvup");
 
-/*define("SERVIDOR_BD","sql113.infinityfree.com");
-define("USUARIO_BD","if0_39174413");
-define("CLAVE_BD","BCMRNQBc1");
-define("NOMBRE_BD","if0_39174413_db_lvup");*/
+/*define("SERVIDOR_BD","mysql.railway.internal");
+define("USUARIO_BD","root");
+define("CLAVE_BD","ltctpCBsulnNCtzRasuZeJCIdthmOoHQ");
+define("NOMBRE_BD","railway");*/
 
 function login($usuario, $contrasenya)
 {
